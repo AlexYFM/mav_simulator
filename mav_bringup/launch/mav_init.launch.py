@@ -76,7 +76,9 @@ def generate_launch_description():
             ])
         ]),
         launch_arguments=[
-            ('gz_args', [TextSubstitution(text='-r -v 4 '), world_path]),
+            # ('gz_args', [TextSubstitution(text='-r -v 4 '), world_path]),
+            # NOTE: -s to run headless
+            ('gz_args', [TextSubstitution(text='-s -r -v 4 '), world_path]),
         ],
     )
 

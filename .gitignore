@@ -1,0 +1,41 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+env/
+
+# --- ROS 2 / Colcon Workspaces ---
+build/
+install/
+log/
+colcon_metadata/
+COLCON_IGNORE
+AMENT_IGNORE
+
+# --- Gazebo / Ignition Simulation ---
+.cache/
+.gazebo/
+.ignition/
+.sdformat/
