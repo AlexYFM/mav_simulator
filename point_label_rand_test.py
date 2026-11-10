@@ -41,7 +41,7 @@ class GateVisualTester(Node):
             [0, 0, 1]
         ], dtype=np.float32)
 
-        self.img_dir = os.path.expanduser('~/mav_sim/test_projections')
+        self.img_dir = os.path.expanduser('~/git_repos/mav_simulator/test_projections')
         os.makedirs(self.img_dir, exist_ok=True)
 
         # Use BEST_EFFORT QoS with depth=1 for latest odometry only
@@ -155,9 +155,13 @@ class GateVisualTester(Node):
         # Build CLI command
         req_data = f'name:"X3", position:{{x:{tx}, y:{ty}, z:{tz}}}, orientation:{{z:{qz}, w:{qw}}}'
         cmd = [
-            "ign", "service", "-s", "/world/x3_illini_warehouse/set_pose",
-            "--reqtype", "ignition.msgs.Pose",
-            "--reptype", "ignition.msgs.Boolean",
+            # "ign",
+            "gz",  
+            "service", "-s", "/world/x3_illini_warehouse/set_pose",
+            # "--reqtype", "ignition.msgs.Pose",
+            # "--reptype", "ignition.msgs.Boolean",
+            "--reqtype", "gz.msgs.Pose",
+            "--reptype", "gz.msgs.Boolean",
             "--timeout", "2000",
             "--req", req_data
         ]
@@ -166,7 +170,6 @@ class GateVisualTester(Node):
 
         # Execute CLI teleport
         res = subprocess.run(cmd, capture_output=True, text=True)
-
         if res.returncode != 0:
             self.get_logger().error(f"CLI teleport failed: {res.stderr}")
             return False, None
