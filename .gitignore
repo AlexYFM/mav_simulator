@@ -39,3 +39,6 @@ AMENT_IGNORE
 .gazebo/
 .ignition/
 .sdformat/
+
+# --- Misc. Files --- 
+*.png

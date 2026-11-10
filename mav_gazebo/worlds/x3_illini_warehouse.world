@@ -5,7 +5,8 @@
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics">
     </plugin>
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
-      <render_engine>ogre2</render_engine>
+      <!-- <render_engine>ogre2</render_engine> -->
+      <render_engine>ogre</render_engine>
     </plugin>
     <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu">
     </plugin>
@@ -32,7 +33,8 @@
         </ignition-gui>
         <camera_pose>-5 0.05 3.0 0 0.54 0.0</camera_pose>
         <!-- 3D scene (main view) - must be first so it takes the main area -->
-        <engine>ogre2</engine>
+        <!-- <engine>ogre2</engine> -->
+        <engine>ogre</engine>
         <scene>scene</scene>
         <ambient_light>0.4 0.4 0.4</ambient_light>
         <background_color>0.8 0.8 0.8</background_color>

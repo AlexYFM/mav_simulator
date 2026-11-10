@@ -25,7 +25,7 @@ fi
 tmux new-session -d -s mav_sim -n simulation
 
 # Send commands to the tmux session
-tmux send-keys -t mav_sim:simulation "cd ~/git_repos/mav_simulator" C-m
+# tmux send-keys -t mav_sim:simulation "cd ~/git_repos/mav_simulator" C-m
 tmux send-keys -t mav_sim:simulation "source install/setup.bash" C-m
 tmux send-keys -t mav_sim:simulation "ros2 launch mav_bringup mav_init.launch.py" C-m
 

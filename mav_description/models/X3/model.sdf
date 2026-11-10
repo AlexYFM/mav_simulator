@@ -283,7 +283,7 @@
 
     <!-- Camera link (extrinsics: imu^T_cam, imu^R_cam from VINS config; pose = camera in base/IMU frame) -->
     <link name="X3/camera_link">
-      <pose>-0.0015 0.00604x 0.0623 0.0 -0.523599 0.0</pose>
+      <pose>-0.0015 0.00604 0.0623 0.0 -0.523599 0.0</pose>
       <inertial>
         <mass>0.02</mass>
         <inertia>

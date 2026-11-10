@@ -41,7 +41,7 @@ class GateVisualTester(Node):
         ], dtype=np.float32)
 
         # Output Directories (YOLO Standard)
-        self.base_dir = os.path.expanduser('~/mav_sim/dataset')
+        self.base_dir = os.path.expanduser('~/git_repos/mav_simulator/dataset')
         self.split_ratio = 0.8
         
         for split in ['train', 'val']:
@@ -109,9 +109,9 @@ class GateVisualTester(Node):
         # Build CLI command
         req_data = f'name:"X3", position:{{x:{tx}, y:{ty}, z:{tz}}}, orientation:{{z:{qz}, w:{qw}}}'
         cmd = [
-            "ign", "service", "-s", "/world/x3_illini_warehouse/set_pose",
-            "--reqtype", "ignition.msgs.Pose", 
-            "--reptype", "ignition.msgs.Boolean",
+            "gz", "service", "-s", "/world/x3_illini_warehouse/set_pose",
+            "--reqtype", "gz.msgs.Pose", 
+            "--reptype", "gz.msgs.Boolean",
             "--timeout", "2000", 
             "--req", req_data
         ]
@@ -300,8 +300,8 @@ def main():
     rclpy.init()
     node = GateVisualTester()
     try:
-        node.run(5000)
-        # node.run(10)
+        # node.run(5000)
+        node.run(10)
     except KeyboardInterrupt:
         pass
     finally:
