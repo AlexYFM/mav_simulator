@@ -14,20 +14,21 @@ from sensor_msgs.msg import Image
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 
+
 class GateVisualTester(Node):
     def __init__(self):
-        super().__init__('gate_visual_tester')
+        super().__init__("gate_visual_tester")
         self.bridge = CvBridge()
         self.latest_msg = None
         self.latest_odom = None
 
         # --- Section: Load Config ---
-        with open('world_config.json', 'r') as f:
+        with open("world_config.json", "r") as f:
             self.config = json.load(f)
 
-        cam_cfg: dict = self.config['camera']
-        hfov = cam_cfg.get('horizontal_fov', cam_cfg.get('fov'))
-        fx = cam_cfg['width'] / (2 * np.tan(hfov / 2))
+        cam_cfg: dict = self.config["camera"]
+        hfov = cam_cfg.get("horizontal_fov", cam_cfg.get("fov"))
+        fx = cam_cfg["width"] / (2 * np.tan(hfov / 2))
         fy = fx
 
         # self.K = np.array([
@@ -35,24 +36,22 @@ class GateVisualTester(Node):
         #     [0, fy, cam_cfg['height'] / 2],
         #     [0, 0, 1]
         # ], dtype=np.float32)
-        self.K = np.array([
-            [834.0615, 0, 640],
-            [0, 834.0616, 360],
-            [0, 0, 1]
-        ], dtype=np.float32)
+        self.K = np.array(
+            [[834.0615, 0, 640], [0, 834.0616, 360], [0, 0, 1]], dtype=np.float32
+        )
 
-        self.img_dir = os.path.expanduser('~/git_repos/mav_simulator/test_projections')
+        self.img_dir = os.path.expanduser("~/git_repos/mav_simulator/test_projections")
         os.makedirs(self.img_dir, exist_ok=True)
 
         # Use BEST_EFFORT QoS with depth=1 for latest odometry only
         qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
             history=QoSHistoryPolicy.KEEP_LAST,
-            depth=1
+            depth=1,
         )
 
-        self.create_subscription(Image, '/X3/camera/image_raw', self.img_cb, 10)
-        self.create_subscription(Odometry, '/X3/odom', self.odom_cb, qos_profile)
+        self.create_subscription(Image, "/X3/camera/image_raw", self.img_cb, 10)
+        self.create_subscription(Odometry, "/X3/odom", self.odom_cb, qos_profile)
 
     def img_cb(self, msg):
         self.latest_msg = msg
@@ -62,18 +61,18 @@ class GateVisualTester(Node):
     def odom_cb(self, msg):
         """Store latest odometry data with timestamp"""
         self.latest_odom = {
-            'pos': {
-                'x': msg.pose.pose.position.x,
-                'y': msg.pose.pose.position.y,
-                'z': msg.pose.pose.position.z
+            "pos": {
+                "x": msg.pose.pose.position.x,
+                "y": msg.pose.pose.position.y,
+                "z": msg.pose.pose.position.z,
             },
-            'ori': {
-                'x': msg.pose.pose.orientation.x,
-                'y': msg.pose.pose.orientation.y,
-                'z': msg.pose.pose.orientation.z,
-                'w': msg.pose.pose.orientation.w
+            "ori": {
+                "x": msg.pose.pose.orientation.x,
+                "y": msg.pose.pose.orientation.y,
+                "z": msg.pose.pose.orientation.z,
+                "w": msg.pose.pose.orientation.w,
             },
-            'receive_time': time.time()
+            "receive_time": time.time(),
         }
 
     # def teleport_and_verify(self, target_pose):
@@ -86,12 +85,12 @@ class GateVisualTester(Node):
     #     angle_offset = random.uniform(-math.radians(20), math.radians(20))
     #     total_yaw = gyaw + angle_offset
     #     tx, ty, tz = gx - dist * math.cos(total_yaw), gy - dist * math.sin(total_yaw), random.uniform(1.0, 2.0)
-        
+
     #     qz, qw = math.sin(total_yaw / 2), math.cos(total_yaw / 2)
 
     #     req = f'name:"X3", position:{{x:{tx}, y:{ty}, z:{tz}}}, orientation:{{z:{qz}, w:{qw}}}'
-    #     cmd = ["ign", "service", "-s", "/world/x3_illini_warehouse/set_pose", 
-    #            "--reqtype", "ignition.msgs.Pose", "--reptype", "ignition.msgs.Boolean", 
+    #     cmd = ["ign", "service", "-s", "/world/x3_illini_warehouse/set_pose",
+    #            "--reqtype", "ignition.msgs.Pose", "--reptype", "ignition.msgs.Boolean",
     #            "--timeout", "2000", "--req", req]
 
     #     # Retry service call if it fails (common on first gate)
@@ -122,7 +121,7 @@ class GateVisualTester(Node):
     #     out = res.stdout
     #     p_b = re.search(r'position\s*\{([\s\S]*?)\}', out).group(1)
     #     o_b = re.search(r'orientation\s*\{([\s\S]*?)\}', out).group(1)
-        
+
     #     pos = {k: float(re.search(fr'{k}:\s*([-eE0-9.+]+)', p_b).group(1)) for k in ['x', 'y', 'z']}
     #     ori = {k: float(re.search(fr'{k}:\s*([-eE0-9.+]+)', o_b).group(1)) for k in ['x', 'y', 'z', 'w']}
     #     return pos, ori
@@ -130,14 +129,20 @@ class GateVisualTester(Node):
         """CLI-based teleport with validation (aligned with training script)"""
         gx, gy, gz, _, _, gyaw = target_pose
 
+        # print(f"Target pose {target_pose}")
         # Calculate random viewpoint
-        dist = random.uniform(4.0, 8.5)
+        # dist = random.uniform(4.0, 8.5)
         # dist = random.uniform(5.5, 12)
-        angle_offset = random.uniform(-math.radians(40), math.radians(40))
+
+        ### debugging, use fixed offset
+        dist = 8
+        # angle_offset = random.uniform(-math.radians(40), math.radians(40))
+        angle_offset = math.radians(0)
         total_yaw = gyaw + angle_offset
 
         if gate_type == "single_gate":
-            tz = random.uniform(0.1, 1)
+            # tz = random.uniform(0.1, 1)
+            tz = 0.1
         else:
             tz = random.uniform(0.1, 2)
         # tz = random.uniform(0.5, 3.0)
@@ -146,7 +151,8 @@ class GateVisualTester(Node):
         tx = gx - dist * math.cos(total_yaw)
         ty = gy - dist * math.sin(total_yaw)
 
-        look_at_yaw = total_yaw + random.uniform(-math.radians(5), math.radians(5))
+        # look_at_yaw = total_yaw + random.uniform(-math.radians(5), math.radians(5))
+        look_at_yaw = total_yaw
         qz = math.sin(look_at_yaw / 2)
         qw = math.cos(look_at_yaw / 2)
 
@@ -158,14 +164,20 @@ class GateVisualTester(Node):
         req_data = f'name:"X3", position:{{x:{tx}, y:{ty}, z:{tz}}}, orientation:{{z:{qz}, w:{qw}}}'
         cmd = [
             # "ign",
-            "gz",  
-            "service", "-s", "/world/x3_illini_warehouse/set_pose",
+            "gz",
+            "service",
+            "-s",
+            "/world/x3_illini_warehouse/set_pose",
             # "--reqtype", "ignition.msgs.Pose",
             # "--reptype", "ignition.msgs.Boolean",
-            "--reqtype", "gz.msgs.Pose",
-            "--reptype", "gz.msgs.Boolean",
-            "--timeout", "2000",
-            "--req", req_data
+            "--reqtype",
+            "gz.msgs.Pose",
+            "--reptype",
+            "gz.msgs.Boolean",
+            "--timeout",
+            "2000",
+            "--req",
+            req_data,
         ]
 
         self.get_logger().info(f"Teleporting to ({tx:.2f}, {ty:.2f}, {tz:.2f})")
@@ -195,33 +207,37 @@ class GateVisualTester(Node):
                 continue
 
             # Check data freshness
-            data_age = time.time() - self.latest_odom['receive_time']
+            data_age = time.time() - self.latest_odom["receive_time"]
             if data_age > 0.5:
                 continue
 
             # Verify position
-            curr_xy = np.array([
-                self.latest_odom['pos']['x'],
-                self.latest_odom['pos']['y'],
-            ])
+            curr_xy = np.array(
+                [
+                    self.latest_odom["pos"]["x"],
+                    self.latest_odom["pos"]["y"],
+                ]
+            )
             error = np.linalg.norm(curr_xy - target_xy)
 
             if error < 0.5:  # Within 50cm is good enough
                 self.get_logger().info(f"✓ Teleport verified (error: {error:.3f}m)")
-                return True, (self.latest_odom['pos'], self.latest_odom['ori'])
+                return True, (self.latest_odom["pos"], self.latest_odom["ori"])
 
         self.get_logger().warn("Teleport verification timeout")
         return False, None
-    
+
     def run(self):
-        for i, gate in enumerate(self.config['world_layout']):
+        for i, gate in enumerate(self.config["world_layout"]):
             self.get_logger().info(f"=== Section: Processing Gate {i+1} ===")
-            gx, gy, gz, _, _, gyaw = gate['pose']
+            gx, gy, gz, _, _, gyaw = gate["pose"]
 
             # --- 1. Teleport and verify target via CLI ---
-            success, pose_data = self.teleport_and_verify(gate['pose'], gate['type'])
+            success, pose_data = self.teleport_and_verify(gate["pose"], gate["type"])
             if not success:
-                self.get_logger().error(f"--- Example: Teleport Failed for Gate {i+1} ---")
+                self.get_logger().error(
+                    f"--- Example: Teleport Failed for Gate {i+1} ---"
+                )
                 continue
             pos, quat = pose_data
 
@@ -235,16 +251,16 @@ class GateVisualTester(Node):
                 rclpy.spin_once(self, timeout_sec=0.1)
 
             target_img_msg = self.latest_msg
-            img = self.bridge.imgmsg_to_cv2(target_img_msg, 'bgr8')
+            img = self.bridge.imgmsg_to_cv2(target_img_msg, "bgr8")
 
             # image_pose = self.odom_at_image
 
-            # print("Pose returned by teleport:", pose_data)
+            print("Pose returned by teleport:", pose_data)
             # print("Pose when image callback ran:", image_pose)
 
             # --- 6. Projection math (same as before) ---
-            t_wb = np.array([pos['x'], pos['y'], pos['z']])
-            R_wb = R.from_quat([quat['x'], quat['y'], quat['z'], quat['w']]).as_matrix()
+            t_wb = np.array([pos["x"], pos["y"], pos["z"]])
+            R_wb = R.from_quat([quat["x"], quat["y"], quat["z"], quat["w"]]).as_matrix()
 
             t_bc = np.array([-0.0015, 0.00604, 0.0623])
             # t_bc = np.array([
@@ -252,8 +268,7 @@ class GateVisualTester(Node):
             #     0.00604,      # Cam Y - Base Y
             #     0.0623 - 0.053302   # Cam Z - Base Z (The culprit!)
             # ])
-            R_bc = R.from_euler('xyz', [0.0, -0.523599, 0.0]).as_matrix()
-
+            R_bc = R.from_euler("xyz", [0.0, -0.523599, 0.0]).as_matrix()
             R_wc = R_wb @ R_bc
             t_wc = t_wb + R_wb @ t_bc
 
@@ -266,51 +281,91 @@ class GateVisualTester(Node):
 
             h, w = img.shape[:2]
 
-            for g in self.config['world_layout']:
-                is_target = (g['name'] == gate['name'])
-                gtype = self.config['gate_types'][g['type']]
-                local_pts = np.array(gtype['local_keypoints'], dtype=np.float32)
-                r_gate_mat = R.from_euler('z', g['pose'][5]).as_matrix()
-                world_pts = (r_gate_mat @ local_pts.T).T + np.array(g['pose'][:3])
+            for g in self.config["world_layout"]:
+                is_target = g["name"] == gate["name"]
+                gtype = self.config["gate_types"][g["type"]]
+                local_pts = np.array(gtype["local_keypoints"], dtype=np.float32)
+                r_gate_mat = R.from_euler("z", g["pose"][5]).as_matrix()
+                world_pts = (r_gate_mat @ local_pts.T).T + np.array(g["pose"][:3])
 
                 pts_in_cam = (R_cw @ world_pts.T).T + t_cw.flatten()
-                
+
                 if np.any(pts_in_cam[:, 2] < 0.2):
                     continue
-                
+
                 distortion = np.zeros(5)
                 # distortion = np.array([-0.25390268, 0.06240127, -0.00113674, 0.00213326, 0.0], dtype=np.float32)
-                img_pts, _ = cv2.projectPoints(world_pts, rvec, tvec, self.K, distortion)
+                img_pts, _ = cv2.projectPoints(
+                    world_pts, rvec, tvec, self.K, distortion
+                )
                 img_pts = img_pts.reshape(-1, 2)
                 pixels = [(int(round(pt[0])), int(round(pt[1]))) for pt in img_pts]
 
                 if is_target:
+                    object_points = np.array(
+                        [
+                            [2, -1.35, 2.8],
+                            [2, 1.35, 2.8],
+                            [2, -0.75, 2.2],
+                            [2, 0.75, 2.2],
+                        ],
+                        dtype=np.float32,
+                    )
+                    # 2. The actual pixel keypoints you measured from the image
+                    # Shape: (N, 2)
+                    image_points = np.array(
+                        [
+                            [472, 577],  # Actual Top-Left
+                            [810, 577],  # Actual Top-Right
+                            [540, 639],  # Actual Inner Top-Left
+                            [720, 639],  # Actual Inner Top-Right
+                        ],
+                        dtype=np.float32,
+                    )
+
+                    # 3. Solve PnP to find the exact camera pose that maps world -> pixels
+                    success, rvec_pnp, tvec_pnp = cv2.solvePnP(
+                        object_points, image_points, self.K, None
+                    )
+
+                    print("PnP tvec:", tvec_pnp.flatten())
+                    print("My calculated tvec:", tvec.flatten())
+
                     color = (0, 255, 0)
                     thickness = 2
                     # Get loops from config: e.g., [[0,1,2,3], [4,5,6,7]]
-                    loops = gtype.get('loops', [range(len(pixels))]) 
-                    
+                    loops = gtype.get("loops", [range(len(pixels))])
+
                     for loop in loops:
                         # Convert loop indices to a list of pixel tuples
                         loop_pts = [pixels[idx] for idx in loop]
-                        
+
                         for j in range(len(loop_pts)):
                             pt1 = loop_pts[j]
-                            pt2 = loop_pts[(j + 1) % len(loop_pts)] # Closes the loop
+                            pt2 = loop_pts[(j + 1) % len(loop_pts)]  # Closes the loop
                             cv2.line(img, pt1, pt2, color, thickness)
                             cv2.circle(img, pt1, 3, color, -1)
                 else:
                     # Non-target gates (red)
                     if any(0 <= p[0] < w and 0 <= p[1] < h for p in pixels):
                         color = (0, 0, 255)
-                        loops = gtype.get('loops', [range(len(pixels))])
+                        loops = gtype.get("loops", [range(len(pixels))])
                         for loop in loops:
                             loop_pts = [pixels[idx] for idx in loop]
                             for j in range(len(loop_pts)):
-                                cv2.line(img, loop_pts[j], loop_pts[(j + 1) % len(loop_pts)], color, 1)
+                                cv2.line(
+                                    img,
+                                    loop_pts[j],
+                                    loop_pts[(j + 1) % len(loop_pts)],
+                                    color,
+                                    1,
+                                )
 
-            cv2.imwrite(os.path.join(self.img_dir, f'randgate{i+1}.png'), img)
+            cv2.imwrite(os.path.join(self.img_dir, f"randgate{i+1}.png"), img)
             self.get_logger().info(f"--- Example: Saved randgate{i+1}.png ---")
+
+            ### quit after first gate
+            quit()
 
 
 def main():
@@ -322,5 +377,6 @@ def main():
         node.destroy_node()
         rclpy.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
