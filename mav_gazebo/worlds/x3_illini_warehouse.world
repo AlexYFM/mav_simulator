@@ -2,6 +2,7 @@
 <!-- Ignition Fortress (gz-sim8) compatible; uses local models from mav_gazebo/models -->
 <sdf version="1.8">
   <world name="x3_illini_warehouse">
+    <gravity> 0 0 0 </gravity>
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics">
     </plugin>
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">

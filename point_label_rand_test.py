@@ -56,6 +56,8 @@ class GateVisualTester(Node):
 
     def img_cb(self, msg):
         self.latest_msg = msg
+        if self.latest_odom is not None:
+            self.odom_at_image = self.latest_odom.copy()
 
     def odom_cb(self, msg):
         """Store latest odometry data with timestamp"""
@@ -235,6 +237,11 @@ class GateVisualTester(Node):
             target_img_msg = self.latest_msg
             img = self.bridge.imgmsg_to_cv2(target_img_msg, 'bgr8')
 
+            # image_pose = self.odom_at_image
+
+            # print("Pose returned by teleport:", pose_data)
+            # print("Pose when image callback ran:", image_pose)
+
             # --- 6. Projection math (same as before) ---
             t_wb = np.array([pos['x'], pos['y'], pos['z']])
             R_wb = R.from_quat([quat['x'], quat['y'], quat['z'], quat['w']]).as_matrix()
@@ -267,6 +274,7 @@ class GateVisualTester(Node):
                 world_pts = (r_gate_mat @ local_pts.T).T + np.array(g['pose'][:3])
 
                 pts_in_cam = (R_cw @ world_pts.T).T + t_cw.flatten()
+                
                 if np.any(pts_in_cam[:, 2] < 0.2):
                     continue
                 
@@ -276,16 +284,6 @@ class GateVisualTester(Node):
                 img_pts = img_pts.reshape(-1, 2)
                 pixels = [(int(round(pt[0])), int(round(pt[1]))) for pt in img_pts]
 
-                # if is_target:
-                #     color = (0, 255, 0)
-                #     for j in range(len(pixels)):
-                #         cv2.line(img, pixels[j], pixels[(j + 1) % len(pixels)], color, 2)
-                #         cv2.circle(img, pixels[j], 3, color, -1)
-                # else:
-                #     if any(0 <= p[0] < w and 0 <= p[1] < h for p in pixels):
-                #         color = (0, 0, 255)
-                #         for j in range(len(pixels)):
-                #             cv2.line(img, pixels[j], pixels[(j + 1) % len(pixels)], color, 1)
                 if is_target:
                     color = (0, 255, 0)
                     thickness = 2
