@@ -156,12 +156,25 @@ class GateVisualTester(Node):
         qz = math.sin(look_at_yaw / 2)
         qw = math.cos(look_at_yaw / 2)
 
+        ### pitch down
+        pitch_offset = math.radians(30.0)
+
+        # Convert Euler angles [roll, pitch, yaw] to a quaternion [x, y, z, w]
+        drone_rotation = R.from_euler("xyz", [0.0, pitch_offset, look_at_yaw])
+        qx, qy, qz, qw = drone_rotation.as_quat()
+
         # CLEAR OLD DATA BEFORE TELEPORT
         self.latest_odom = None
         self.latest_msg = None
 
         # Build CLI command
-        req_data = f'name:"X3", position:{{x:{tx}, y:{ty}, z:{tz}}}, orientation:{{z:{qz}, w:{qw}}}'
+        # req_data = f'name:"X3", position:{{x:{tx}, y:{ty}, z:{tz}}}, orientation:{{z:{qz}, w:{qw}}}'
+
+        ### debug
+        req_data = (
+            f'name:"X3", position:{{x:{tx}, y:{ty}, z:{tz}}}, '
+            f"orientation:{{x:{qx}, y:{qy}, z:{qz}, w:{qw}}}"
+        )
         cmd = [
             # "ign",
             "gz",
@@ -263,6 +276,7 @@ class GateVisualTester(Node):
             R_wb = R.from_quat([quat["x"], quat["y"], quat["z"], quat["w"]]).as_matrix()
 
             t_bc = np.array([-0.0015, 0.00604, 0.0623])
+
             # t_bc = np.array([
             #     -0.0015 ,       # Cam X - Base X
             #     0.00604,      # Cam Y - Base Y
@@ -294,7 +308,10 @@ class GateVisualTester(Node):
                     continue
 
                 distortion = np.zeros(5)
-                # distortion = np.array([-0.25390268, 0.06240127, -0.00113674, 0.00213326, 0.0], dtype=np.float32)
+                # distortion = np.array(
+                #     [-0.25390268, 0.06240127, -0.00113674, 0.00213326, 0.0],
+                #     dtype=np.float32,
+                # )
                 img_pts, _ = cv2.projectPoints(
                     world_pts, rvec, tvec, self.K, distortion
                 )
@@ -302,23 +319,19 @@ class GateVisualTester(Node):
                 pixels = [(int(round(pt[0])), int(round(pt[1]))) for pt in img_pts]
 
                 if is_target:
-                    object_points = np.array(
-                        [
-                            [2, -1.35, 2.8],
-                            [2, 1.35, 2.8],
-                            [2, -0.75, 2.2],
-                            [2, 0.75, 2.2],
-                        ],
-                        dtype=np.float32,
-                    )
+                    object_points = np.array(world_pts[:4], dtype=np.float32)
                     # 2. The actual pixel keypoints you measured from the image
                     # Shape: (N, 2)
                     image_points = np.array(
                         [
-                            [472, 577],  # Actual Top-Left
-                            [810, 577],  # Actual Top-Right
-                            [540, 639],  # Actual Inner Top-Left
-                            [720, 639],  # Actual Inner Top-Right
+                            [457, 364],  # Actual BL
+                            [825, 364],  # Actual BR
+                            [804, 34],  # Actual TR
+                            [477, 34],  # Actual TL
+                            # [533, 289], # Actual IBL
+                            # [749, 289], # Actual IBR
+                            # [745, 90], # Actual ITR
+                            # [539, 90], # Actual ITL
                         ],
                         dtype=np.float32,
                     )
@@ -330,6 +343,13 @@ class GateVisualTester(Node):
 
                     print("PnP tvec:", tvec_pnp.flatten())
                     print("My calculated tvec:", tvec.flatten())
+
+                    # img_pts, _ = cv2.projectPoints(
+                    #     world_pts, rvec_pnp, tvec_pnp, self.K, distortion
+                    # )
+                    # img_pts = img_pts.reshape(-1, 2)
+                    # pixels = [(int(round(pt[0])), int(round(pt[1]))) for pt in img_pts]
+                    # ### end of debug
 
                     color = (0, 255, 0)
                     thickness = 2
