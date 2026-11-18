@@ -37,7 +37,9 @@ class GateVisualTester(Node):
         #     [0, 0, 1]
         # ], dtype=np.float32)
         self.K = np.array(
-            [[834.0615, 0, 640], [0, 834.0616, 360], [0, 0, 1]], dtype=np.float32
+            # [[834.0615, 0, 640], [0, 834.0616, 360], [0, 0, 1]], dtype=np.float32
+            [[1100, 0, 640], [0, 1050, 360], [0, 0, 1]],
+            dtype=np.float32,
         )
 
         self.img_dir = os.path.expanduser("~/git_repos/mav_simulator/test_projections")
@@ -158,6 +160,7 @@ class GateVisualTester(Node):
 
         ### pitch down
         pitch_offset = math.radians(30.0)
+        # pitch_offset = math.radians(0)
 
         # Convert Euler angles [roll, pitch, yaw] to a quaternion [x, y, z, w]
         drone_rotation = R.from_euler("xyz", [0.0, pitch_offset, look_at_yaw])
@@ -240,6 +243,30 @@ class GateVisualTester(Node):
         self.get_logger().warn("Teleport verification timeout")
         return False, None
 
+    def stereographic_project(self, pts_cam, fx, fy, cx, cy, k1, k2):
+        x = pts_cam[:, 0]
+        y = pts_cam[:, 1]
+        z = pts_cam[:, 2]
+
+        # Normalized camera coordinates
+        xn = x / z
+        yn = y / z
+
+        r2 = xn**2 + yn**2
+
+        # Radial distortion factor (barrel distortion typically has a negative k1)
+        distortion_factor = 1.0 + k1 * r2 + k2 * (r2**2)
+
+        # Apply distortion to normalized coordinates
+        xd = xn * distortion_factor
+        yd = yn * distortion_factor
+
+        # Convert distorted normalized coordinates to pixels using your tuned focal lengths
+        u = cx + fx * xd
+        v = cy + fy * yd
+
+        return np.column_stack((u, v))
+
     def run(self):
         for i, gate in enumerate(self.config["world_layout"]):
             self.get_logger().info(f"=== Section: Processing Gate {i+1} ===")
@@ -278,7 +305,7 @@ class GateVisualTester(Node):
             t_bc = np.array([-0.0015, 0.00604, 0.0623])
 
             # t_bc = np.array([
-            #     -0.0015 ,       # Cam X - Base X
+            # -0.0015 ,       # Cam X - Base X
             #     0.00604,      # Cam Y - Base Y
             #     0.0623 - 0.053302   # Cam Z - Base Z (The culprit!)
             # ])
@@ -307,49 +334,52 @@ class GateVisualTester(Node):
                 if np.any(pts_in_cam[:, 2] < 0.2):
                     continue
 
-                distortion = np.zeros(5)
-                # distortion = np.array(
-                #     [-0.25390268, 0.06240127, -0.00113674, 0.00213326, 0.0],
-                #     dtype=np.float32,
-                # )
+                # distortion = np.zeros(5)
+                distortion = np.array(
+                    # [-0.25390268, 0.06240127, -0.00113674, 0.00213326, 0.0],
+                    [-0.35, 0.06240127, -0.00113674, 0.00213326, 0.0],
+                    dtype=np.float32,
+                )
+
                 img_pts, _ = cv2.projectPoints(
                     world_pts, rvec, tvec, self.K, distortion
                 )
+                # img_pts = self.stereographic_project(
+                #     pts_in_cam,
+                #     self.K[0, 0],
+                #     self.K[1, 1],
+                #     self.K[0, 2],
+                #     self.K[1, 2],
+                #     distortion[0],
+                #     distortion[1],
+                # )
                 img_pts = img_pts.reshape(-1, 2)
                 pixels = [(int(round(pt[0])), int(round(pt[1]))) for pt in img_pts]
 
                 if is_target:
-                    object_points = np.array(world_pts[:4], dtype=np.float32)
-                    # 2. The actual pixel keypoints you measured from the image
-                    # Shape: (N, 2)
-                    image_points = np.array(
+
+                    test_cam_points = np.array(
                         [
-                            [457, 364],  # Actual BL
-                            [825, 364],  # Actual BR
-                            [804, 34],  # Actual TR
-                            [477, 34],  # Actual TL
-                            # [533, 289], # Actual IBL
-                            # [749, 289], # Actual IBR
-                            # [745, 90], # Actual ITR
-                            # [539, 90], # Actual ITL
+                            [0, 0, 5],
+                            [1, 0, 5],
+                            [-1, 0, 5],
+                            [0, 1, 5],
+                            [0, -1, 5],
                         ],
-                        dtype=np.float32,
+                        dtype=np.float64,
                     )
 
-                    # 3. Solve PnP to find the exact camera pose that maps world -> pixels
-                    success, rvec_pnp, tvec_pnp = cv2.solvePnP(
-                        object_points, image_points, self.K, None
+                    test_img_points, _ = cv2.projectPoints(
+                        test_cam_points,
+                        np.zeros((3, 1)),
+                        np.zeros((3, 1)),
+                        self.K,
+                        distortion,
                     )
 
-                    print("PnP tvec:", tvec_pnp.flatten())
-                    print("My calculated tvec:", tvec.flatten())
-
-                    # img_pts, _ = cv2.projectPoints(
-                    #     world_pts, rvec_pnp, tvec_pnp, self.K, distortion
-                    # )
-                    # img_pts = img_pts.reshape(-1, 2)
-                    # pixels = [(int(round(pt[0])), int(round(pt[1]))) for pt in img_pts]
-                    # ### end of debug
+                    test_world_points = (
+                        R_wc @ (R_gz_to_rdf.T @ test_cam_points.T)
+                    ).T + t_wc
 
                     color = (0, 255, 0)
                     thickness = 2
