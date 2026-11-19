@@ -37,8 +37,8 @@ class GateVisualTester(Node):
         #     [0, 0, 1]
         # ], dtype=np.float32)
         self.K = np.array(
-            # [[834.0615, 0, 640], [0, 834.0616, 360], [0, 0, 1]], dtype=np.float32
-            [[1100, 0, 640], [0, 1050, 360], [0, 0, 1]],
+            [[834.0615, 0, 640], [0, 834.0616, 360], [0, 0, 1]],
+            # [[1100, 0, 640], [0, 1050, 360], [0, 0, 1]],
             dtype=np.float32,
         )
 
@@ -334,12 +334,11 @@ class GateVisualTester(Node):
                 if np.any(pts_in_cam[:, 2] < 0.2):
                     continue
 
-                # distortion = np.zeros(5)
-                distortion = np.array(
-                    # [-0.25390268, 0.06240127, -0.00113674, 0.00213326, 0.0],
-                    [-0.35, 0.06240127, -0.00113674, 0.00213326, 0.0],
-                    dtype=np.float32,
-                )
+                distortion = np.zeros(5)
+                # distortion = np.array(
+                #     [-0.25390268, 0.06240127, -0.00113674, 0.00213326, 0.0],
+                #     dtype=np.float32,
+                # )
 
                 img_pts, _ = cv2.projectPoints(
                     world_pts, rvec, tvec, self.K, distortion
